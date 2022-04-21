@@ -42,7 +42,7 @@ class UserRequestForm(models.Model):
     duration_time_from=models.TimeField()
     duration_time_to=models.TimeField()
     file=models.FileField(upload_to='doc',blank=True)
-    form_status=models.CharField(max_length=200,choices=FORM_STATUS,blank=True,null=True,default='pending')
+    form_status=models.CharField(max_length=200,choices=FORM_STATUS,blank=True,null=True,default='PENDING')
     reject_msg=models.CharField(max_length=200,blank=True,default='rejected')
     requested_date=models.DateField(blank=True)
     replied_date=models.DateField(blank=True)
