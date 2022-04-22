@@ -183,3 +183,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 AUTH_USER_MODEL='account.User'
+
+AUTHENTICATION_BACKENDS =[
+'r2dashboard.authentications.PhoneAuthenticationBackend',
+'django.contrib.auth.backends.ModelBackend',
+]

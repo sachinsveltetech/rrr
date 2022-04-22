@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from account.serializers import UserChangePasswordSerializer, UserLoginSerializer, UserRegistrationSerializer
 from account.renderers import UserRenderer
-
+from account.permissions import AdminRegistrationPermission
 #generate token manually
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -19,6 +19,7 @@ def get_tokens_for_user(user):
     }
 class UserRegistrationView(APIView):
     renderer_classes=[UserRenderer]
+    permission_classes=[AdminRegistrationPermission,]
     def post(self,request,format=None):
         data=request.data        
         serializer=UserRegistrationSerializer(data=data)        

@@ -35,9 +35,13 @@ class UserRequestFormSerializer(serializers.ModelSerializer):
         return user
     
     def update(self,instance,validate_data):
-        # request = self.context.get('request')
+        request = self.context.get('request')
+        print(instance.form_status)
+        print(request.data.get('form_status'))
         # if instance.form_status == 'reject' and request.data.get('form_status',"") !='success':
         #     validate_data['form_status'] = 'pending'
+        if instance.form_status == 'REJECT':
+            validate_data['form_status']='PENDING'
         
         # ip port update
         ip_port = validate_data.pop('ip_port',[])
@@ -47,6 +51,8 @@ class UserRequestFormSerializer(serializers.ModelSerializer):
                 instance.ip_port.filter(id=ip_obj['id']).update(**ip_obj)
             else:
                 instance.ip_port.add(IPPort.objects.create(**ip_obj))
+        
+        
             
         # if not validate_data.get('file',None) or not validate_data.get('file'):
         #     validate_data['file']=instance.file
