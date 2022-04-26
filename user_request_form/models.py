@@ -1,5 +1,6 @@
 # from tkinter import CASCADE
 # from typing import Dict
+from distutils.command.upload import upload
 from django.db import models
 from django.core.validators import RegexValidator
 from account.models import User
@@ -21,7 +22,7 @@ class Tsp(models.Model):
 class UserRequestForm(models.Model):
     mobile_regex_validator=RegexValidator(regex=r"^[6-9]\d{9}$",message="Invalid phone number")
     TARGET_TYPE=(('MOBILE_NUMBER','MOBILE_NUMBER'),('IMEI_NUMBER','IMEI_NUMBER'),('CELL_ID','CELL_ID'),('IP_ADDRESS','IP_ADDRESS'))
-    REQUEST_TO_PROVIDE=(('CDR','CDR'),('IPDR','IPDR'),('TOWER_DUMP','TOWER_DUMP'),('SDR','SDR'))
+    REQUEST_TO_PROVIDE=(('CDR','CDR'),('IPDR','IPDR'),('TOWER_DUMP','TOWER_DUMP'),('SDR','SDR'),('TDR','TDR'))
     FORM_STATUS=(('PENDING','PENDING'),('SUCCESS','SUCCESS'),('REJECT','REJECT'))
     sys_date=models.DateField()
     sys_time=models.TimeField()
@@ -44,11 +45,16 @@ class UserRequestForm(models.Model):
     file=models.FileField(upload_to='doc',blank=True)
     form_status=models.CharField(max_length=200,choices=FORM_STATUS,blank=True,null=True,default='PENDING')
     reject_msg=models.CharField(max_length=200,blank=True,default='rejected')
+    reject_msg_cyberdrome=models.CharField(max_length=200,blank=True,default='Due to incomplete information')
     requested_date=models.DateField(blank=True)
     replied_date=models.DateField(blank=True)
+    approval_or_reject_date=models.DateField(blank=True,null=True)
+    approval_or_reject_time=models.TimeField(blank=True,null=True)
+    tsp_file=models.FileField(upload_to='tsp_doc',blank=True)
     user=models.ForeignKey(User,on_delete=models.CASCADE)
     ip_port=models.ManyToManyField(IPPort)
-    # ip_port=models.JSONField(default=dict)
+    
+    
     
     class Meta:
         ordering = ('id',)
