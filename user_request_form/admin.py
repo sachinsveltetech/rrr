@@ -11,7 +11,5 @@ class UserRequestFormAdmin(admin.ModelAdmin):
 class IPPortAdmin(admin.ModelAdmin):
     list_display=['id','ip','port']
     
-@admin.register(Tsp)
-class TspAdmin(admin.ModelAdmin):
-    list_display=['id','tsp']
+
     

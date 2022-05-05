@@ -13,6 +13,8 @@ urlpatterns =[
     path('tsp/replies/',views.TspRequestReplieView.as_view()),
     path('cyberdrome/',views.CyberdromeView.as_view()),
     path('cyberdrome/<int:pk>/',views.CyberdromeView.as_view()),
-    path('tspresponse/',views.TspResponseView.as_view()),    
-    path('tspresponse/<int:pk>',views.TspResponseView.as_view()),
+    path('tspresponse/',views.TspResponseListView.as_view()),    
+    path('tspresponse/<int:pk>/',views.TspResponseDetailView.as_view()),
+    path('rejectiontable/',views.RejectionTableView.as_view()),
+    path('rejectiontable/<int:pk>/',views.RejectionTableView.as_view()),
 ]

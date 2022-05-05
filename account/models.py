@@ -1,10 +1,14 @@
+# from tkinter import CASCADE
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.core.validators import RegexValidator
+from common.models import Tsp,District
+from .utils import ACCOUNT_TYPE
+
 
 #custom usermanager
 class UserManager(BaseUserManager):
-    def create_user(self, username, phone,district,type, password=None, password2=None):
+    def create_user(self, username, phone ,password=None, password2=None,**extra_fields):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -18,14 +22,14 @@ class UserManager(BaseUserManager):
         user = self.model(
             username=username,
             phone=phone,
-            district=district,
-            type=type,
+           
+            **extra_fields,
         )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, phone,district,type, password=None):
+    def create_superuser(self, username, phone,district,type, password=None,**extra_fields):
         """
         Creates and saves a superuser with the given email, date of
         birth and password.
@@ -36,8 +40,9 @@ class UserManager(BaseUserManager):
             username=username,
             phone=phone,
             password=password,
-            district=district,
-            type=type
+            district_id=district,
+            type=type,
+            **extra_fields,
         )
         user.is_admin = True
         user.save(using=self._db)
@@ -45,12 +50,7 @@ class UserManager(BaseUserManager):
 
 # custom user Model
 class User(AbstractBaseUser):
-    ACCOUNT_TYPE = [
-        ('SUPER_USER', 'SUPER_USER'),
-        ('ADMIN', 'ADMIN'),        
-        ('TSP', 'TSP'),
-        ('USER', 'USER'),
-    ]
+    
     mobile_number_errors = {'required': 'Mobile number is required',
                             'invalid': 'Enter a valid 10 digit mobile number' +
                             'without spaces, + or isd code.'}
@@ -62,8 +62,9 @@ class User(AbstractBaseUser):
         max_length=12,
         unique=True,
         validators=[mobile_regex_validator],blank=False, null=False,error_messages=mobile_number_errors)
-    district = models.CharField(max_length=255)
+    district = models.ForeignKey(District,on_delete=models.CASCADE)
     type = models.CharField(choices=ACCOUNT_TYPE, max_length=255, default='USER')
+    tsp_company=models.ForeignKey(Tsp,on_delete=models.CASCADE,blank=True,null=True, related_name="user_tsp_companies")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
@@ -91,3 +92,6 @@ class User(AbstractBaseUser):
         "Is the user a member of staff?"
         # Simplest possible answer: All admins are staff
         return self.is_admin
+    
+    
+    

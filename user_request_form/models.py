@@ -2,28 +2,26 @@
 # from typing import Dict
 from distutils.command.upload import upload
 from django.db import models
-from django.core.validators import RegexValidator
-from account.models import User
-# Create your models here.
+from django.contrib.auth import get_user_model
+from common.models import Tsp
+from account.utils import ACCOUNT_TYPE
+from .validators import mobile_regex_validator,ip_regex_validator
+from .utils import TARGET_TYPE, REQUEST_TO_PROVIDE, FORM_STATUS
 
-class IPPort(models.Model):
-    ip_regex_validator=RegexValidator(regex=r'\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}\b',message="Invalid ip address")
+User = get_user_model() 
+
+
+class IPPort(models.Model):    
     ip=models.CharField(max_length=200,validators=[ip_regex_validator])
     port=models.IntegerField()
+    def __str__(self) -> str:
+        return f'{self.ip}{self.port}'
+        
     
-    
-
-class Tsp(models.Model):
-    tsp=models.CharField(max_length=200)
-    
-    def __str__(self):
-        return self.tsp
 
 class UserRequestForm(models.Model):
-    mobile_regex_validator=RegexValidator(regex=r"^[6-9]\d{9}$",message="Invalid phone number")
-    TARGET_TYPE=(('MOBILE_NUMBER','MOBILE_NUMBER'),('IMEI_NUMBER','IMEI_NUMBER'),('CELL_ID','CELL_ID'),('IP_ADDRESS','IP_ADDRESS'))
-    REQUEST_TO_PROVIDE=(('CDR','CDR'),('IPDR','IPDR'),('TOWER_DUMP','TOWER_DUMP'),('SDR','SDR'),('TDR','TDR'))
-    FORM_STATUS=(('PENDING','PENDING'),('SUCCESS','SUCCESS'),('REJECT','REJECT'))
+    observer_account_type = models.CharField(max_length=200, choices=ACCOUNT_TYPE, blank=True,default='USER')
+    decision_taken_by=models.ForeignKey(User,on_delete=models.CASCADE,related_name='userrequestform_decision_taken_by',blank=True,null=True)
     sys_date=models.DateField()
     sys_time=models.TimeField()
     target_type=models.CharField(max_length=200,choices=TARGET_TYPE)
@@ -42,10 +40,8 @@ class UserRequestForm(models.Model):
     duration_date_to=models.DateField()
     duration_time_from=models.TimeField()
     duration_time_to=models.TimeField()
-    file=models.FileField(upload_to='doc',blank=True)
+    user_file=models.FileField(upload_to='user_doc',blank=True,null=True)
     form_status=models.CharField(max_length=200,choices=FORM_STATUS,blank=True,null=True,default='PENDING')
-    reject_msg=models.CharField(max_length=200,blank=True,default='rejected')
-    reject_msg_cyberdrome=models.CharField(max_length=200,blank=True,default='Due to incomplete information')
     requested_date=models.DateField(blank=True)
     replied_date=models.DateField(blank=True)
     approval_or_reject_date=models.DateField(blank=True,null=True)
@@ -54,11 +50,19 @@ class UserRequestForm(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE)
     ip_port=models.ManyToManyField(IPPort)
     
-    
-    
     class Meta:
         ordering = ('id',)
         
     def __str__(self):
         return str(self.mobile_number)
         
+        
+class RejectionTable(models.Model):
+    rejection_time=models.DateTimeField(auto_now_add=True)
+    rejection_reason=models.CharField(max_length=500,blank=True,null=True)
+    user_form=models.ForeignKey(UserRequestForm,on_delete=models.CASCADE)
+    reject_by=models.ForeignKey(User,on_delete=models.CASCADE,related_name='rejection_table_rejected_by', null=True, blank=True)
+    
+    def __str__(self):
+        return f'{self.user_form}'
+            

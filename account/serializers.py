@@ -1,8 +1,9 @@
 
 # from dataclasses import fields
+from common.models import State,District
 from django.forms import ValidationError
 from rest_framework import serializers
-from account.models import User
+from account.models import User,Tsp
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -10,7 +11,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password2=serializers.CharField(style={'input_type':'password'},write_only=True)
     class Meta:
         model=User
-        fields=['username','phone','district','type','password','password2']
+        fields=['username','phone','district','type','password','password2','tsp_company']
         extra_kwargs={
             'password':{'write_only':True}
         }
@@ -49,4 +50,9 @@ class UserChangePasswordSerializer(serializers.Serializer):
         return attrs
     def create(self, validated_data):
         validated_data.pop('password2')
+        
         return User.objects.create(**validated_data)
+    
+    
+
+        

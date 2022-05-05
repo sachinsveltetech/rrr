@@ -1,9 +1,17 @@
 # from xml.etree.ElementInclude import include
+# from attr import validate
 from rest_framework import serializers
-from.models import UserRequestForm,IPPort,Tsp
+from.models import RejectionTable, UserRequestForm,IPPort
+from common.models import Tsp
 from account.models import User
 import json
 # from account.models import User
+
+
+class RejectionTableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=RejectionTable
+        fields='__all__'
 
 
 class IPPortSerializer(serializers.ModelSerializer):
@@ -11,20 +19,26 @@ class IPPortSerializer(serializers.ModelSerializer):
     class Meta:
         model=IPPort
         fields=('ip_port_id','ip','port')
+
         
 class TspSerializer(serializers.ModelSerializer):
     class Meta:
         model=Tsp
         fields='__all__'
 
+
 class UserRequestFormSerializer(serializers.ModelSerializer):
     ip_port = IPPortSerializer(many=True)    
-    # ip_port = serializers.StringRelatedField(many=True,read_only=True)    
+    rejection_data = serializers.SerializerMethodField()
+    
     class Meta:
         model=UserRequestForm
         fields='__all__'
         # fields=['id','case_ref','case_type','tsp','requset_type','target_type','duration_from_date','duration_to_date','duration_from_time','duration_to_time','requested_date','replied_date','form_status','reject_msg']
         read_only_fields=['user',]
+    
+    def get_rejection_data(self, obj):
+        return RejectionTableSerializer(obj.rejectiontable_set.last()).data
         
     def create(self, validated_data):
         ipport=validated_data.pop('ip_port')
@@ -45,6 +59,9 @@ class UserRequestFormSerializer(serializers.ModelSerializer):
         # breakpoint()
         if instance.form_status == 'REJECT':
             validate_data['form_status']='PENDING'
+            
+        if instance.user.type in ['ADMIN','TSP']:
+            validate_data['observer_account_type']=instance.user.type
         
         # ip port update
         ip_port = validate_data.pop('ip_port',[])
@@ -63,21 +80,25 @@ class UserRequestFormSerializer(serializers.ModelSerializer):
         # return instance
         
 class UserRequestReplieSerializer(serializers.ModelSerializer):
+    rejection_data = serializers.SerializerMethodField()
+    
     class Meta:
         model=UserRequestForm
-        fields=['id','requested_date','case_ref','case_type','select_tsp','request_to_provide','duration_date_from','duration_date_to','duration_time_from','duration_time_to','target_type','replied_date','form_status','reject_msg']
-
-
+        fields=['id','requested_date','case_ref','case_type','select_tsp','request_to_provide','duration_date_from','duration_date_to','duration_time_from','duration_time_to','target_type','replied_date','form_status','rejection_data']
+        
+    def get_rejection_data(self, obj):
+        return RejectionTableSerializer(obj.rejectiontable_set.last()).data
 
         
 class CyberdromeSerializer(serializers.ModelSerializer):
     district = serializers.CharField(source='user.district',read_only=True)
     class Meta:
         model=UserRequestForm
-        fields=['id','requested_date','select_tsp','request_to_provide','target_type','duration_date_from','duration_date_to','duration_time_from','duration_time_to','case_ref','case_type','form_status','district','approval_or_reject_date','approval_or_reject_time','reject_msg_cyberdrome']
+        fields=['id','requested_date','select_tsp','request_to_provide','target_type','duration_date_from','duration_date_to','duration_time_from','duration_time_to','case_ref','case_type','form_status','district','approval_or_reject_date','approval_or_reject_time',]
         
 class TspResponseSerializer(serializers.ModelSerializer):
     district=serializers.CharField(source='user.district',read_only=True)
     class Meta:
         model=UserRequestForm
-        fields=['id','requested_date','case_ref','case_type','request_to_provide','target_type','duration_date_from','duration_date_to','duration_time_from','duration_time_to','district','reject_msg','form_status','tsp_file']
+        fields=['id','requested_date','case_ref','case_type','request_to_provide','target_type','duration_date_from','duration_date_to','duration_time_from','duration_time_to','district','form_status','tsp_file']
+        
