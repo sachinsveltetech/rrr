@@ -8,23 +8,23 @@ from account.models import User,Tsp
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password=serializers.CharField(style={'input_type':'password'},write_only=True)
-    password2=serializers.CharField(style={'input_type':'password'},write_only=True)
+    # password2=serializers.CharField(style={'input_type':'password'},write_only=True)
     class Meta:
         model=User
-        fields=['username','phone','district','type','password','password2','tsp_company', 'state']
+        fields=['username','phone','district','type','password','tsp_company', 'email','state']
         extra_kwargs={
             'password':{'write_only':True}
         }
     # validating password and confirm password while registration
-    def validate(self, attrs):
-        password=attrs.get('password')
-        password2=attrs.get('password2')        
-        if password != password2:
-            raise serializers.ValidationError('Password and Confirm Password does not match')        
-        return attrs
+    # def validate(self, attrs):
+    #     password=attrs.get('password')
+    #     password2=attrs.get('password2')        
+    #     if password != password2:
+    #         raise serializers.ValidationError('Password and Confirm Password does not match')        
+    #     return attrs
     
     def create(self, validate_data):
-        validate_data.pop('password2')
+        # validate_data.pop('password2')
         return User.objects.create_user(**validate_data)
     
 class UserLoginSerializer(serializers.ModelSerializer):

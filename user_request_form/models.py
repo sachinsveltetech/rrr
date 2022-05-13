@@ -60,7 +60,9 @@ class UserRequestForm(models.Model):
     
     #For TSP to upload file after approval
     tsp_file=models.FileField(upload_to='tsp_doc',blank=True)
-      
+    
+    reject_msg_admin=models.CharField(max_length=200,blank=True,null=True)  
+    reject_msg_tsp=models.CharField(max_length=200,blank=True,null=True)  
     
     class Meta:
         ordering = ('id',)

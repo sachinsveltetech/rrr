@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserRequestForm,IPPort,Tsp
+from .models import UserRequestForm,IPPort,RejectionTable,Tsp
 # Register your models here.
 
 @admin.register(UserRequestForm)
@@ -11,5 +11,6 @@ class UserRequestFormAdmin(admin.ModelAdmin):
 class IPPortAdmin(admin.ModelAdmin):
     list_display=['id','ip','port','date_from','date_to','time_from','time_to']
     
-
-    
+@admin.register(RejectionTable)
+class RejectionTableAdmin(admin.ModelAdmin):
+    list_display=['id','rejection_time','rejection_reason','user_form','reject_by']
