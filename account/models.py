@@ -1,14 +1,15 @@
 # from tkinter import CASCADE
+# from sre_parse import State
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.core.validators import RegexValidator
-from common.models import Tsp,District
+from common.models import Tsp,District,State
 from .utils import ACCOUNT_TYPE
 
 
 #custom usermanager
 class UserManager(BaseUserManager):
-    def create_user(self, username, phone ,password=None, password2=None,**extra_fields):
+    def create_user(self, username, phone ,email,password=None, password2=None,**extra_fields):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -18,10 +19,15 @@ class UserManager(BaseUserManager):
 
         if not phone:
             raise ValueError('Users must have an phone number')
+        
+        if not email:
+            raise ValueError('Users must have an email address')
 
         user = self.model(
             username=username,
             phone=phone,
+            email=email,
+            
            
             **extra_fields,
         )
@@ -29,7 +35,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, phone,district,type, password=None,**extra_fields):
+    def create_superuser(self, username, phone,type, password=None,**extra_fields):
         """
         Creates and saves a superuser with the given email, date of
         birth and password.
@@ -39,8 +45,7 @@ class UserManager(BaseUserManager):
         user = self.create_user(
             username=username,
             phone=phone,
-            password=password,
-            district_id=district,
+            password=password,            
             type=type,
             **extra_fields,
         )
@@ -57,12 +62,14 @@ class User(AbstractBaseUser):
     mobile_regex_validator = RegexValidator(regex=r"^[6-9]\d{9}$",
                                              message="Invalid phone number")
     username=models.CharField(max_length=255,unique=True)
+    email=models.EmailField(max_length=250,unique=True,blank=True,null=True)    
     phone = models.CharField(
         verbose_name='Mobile Number',
         max_length=12,
         unique=True,
         validators=[mobile_regex_validator],blank=False, null=False,error_messages=mobile_number_errors)
-    district = models.ForeignKey(District,on_delete=models.CASCADE)
+    district = models.ForeignKey(District,on_delete=models.CASCADE,blank=True,null=True)
+    state=models.ForeignKey(State,on_delete=models.CASCADE, null=True, blank=True)
     type = models.CharField(choices=ACCOUNT_TYPE, max_length=255, default='USER')
     tsp_company=models.ForeignKey(Tsp,on_delete=models.CASCADE,blank=True,null=True, related_name="user_tsp_companies")
     is_active = models.BooleanField(default=True)
@@ -71,8 +78,8 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['phone','district','type']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['phone','type',]
 
     def __str__(self):
         return self.username

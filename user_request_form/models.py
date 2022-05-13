@@ -14,14 +14,23 @@ User = get_user_model()
 class IPPort(models.Model):    
     ip=models.CharField(max_length=200,validators=[ip_regex_validator])
     port=models.IntegerField()
+    date_from=models.DateField(blank=True,null=True)
+    date_to=models.DateField(blank=True,null=True)
+    time_from=models.TimeField(blank=True,null=True)
+    time_to=models.TimeField(blank=True,null=True)
     def __str__(self) -> str:
         return f'{self.ip}{self.port}'
         
     
 
 class UserRequestForm(models.Model):
+    #All Foreign keys:
     observer_account_type = models.CharField(max_length=200, choices=ACCOUNT_TYPE, blank=True,default='USER')
     decision_taken_by=models.ForeignKey(User,on_delete=models.CASCADE,related_name='userrequestform_decision_taken_by',blank=True,null=True)
+    user=models.ForeignKey(User,on_delete=models.CASCADE)
+    ip_port=models.ManyToManyField(IPPort)
+    
+    #to be filled by the user:
     sys_date=models.DateField()
     sys_time=models.TimeField()
     target_type=models.CharField(max_length=200,choices=TARGET_TYPE)
@@ -30,25 +39,28 @@ class UserRequestForm(models.Model):
     request_to_provide=models.CharField(max_length=200,choices=REQUEST_TO_PROVIDE)
     mobile_number=models.BigIntegerField(validators=[mobile_regex_validator])
     cell_id=models.CharField(max_length=200)
-    imei=models.CharField(max_length=200)
-    date_from=models.DateField(blank=True,null=True)
-    date_to=models.DateField(blank=True,null=True)
-    time_from=models.TimeField(blank=True,null=True)
-    time_to=models.TimeField(blank=True,null=True)
+    imei=models.CharField(max_length=200)    
     select_tsp=models.ForeignKey(Tsp,on_delete=models.PROTECT)
     duration_date_from=models.DateField()
     duration_date_to=models.DateField()
     duration_time_from=models.TimeField()
     duration_time_to=models.TimeField()
     user_file=models.FileField(upload_to='user_doc',blank=True,null=True)
+    
+    #to be filled by TSP and CYBERDOME
     form_status=models.CharField(max_length=200,choices=FORM_STATUS,blank=True,null=True,default='PENDING')
-    requested_date=models.DateField(blank=True)
-    replied_date=models.DateField(blank=True)
+    admin_status=models.CharField(max_length=200,choices=FORM_STATUS,blank=True,null=True,default='PENDING')
+    
+    #for tsp replie
+    requested_date=models.DateField(blank=True,null=True)
+    replied_date=models.DateField(blank=True,null=True)
+    #for cyberdome view
     approval_or_reject_date=models.DateField(blank=True,null=True)
     approval_or_reject_time=models.TimeField(blank=True,null=True)
+    
+    #For TSP to upload file after approval
     tsp_file=models.FileField(upload_to='tsp_doc',blank=True)
-    user=models.ForeignKey(User,on_delete=models.CASCADE)
-    ip_port=models.ManyToManyField(IPPort)
+      
     
     class Meta:
         ordering = ('id',)
@@ -56,7 +68,7 @@ class UserRequestForm(models.Model):
     def __str__(self):
         return str(self.mobile_number)
         
-        
+#For CYBERDOME and TSP after rejection of form       
 class RejectionTable(models.Model):
     rejection_time=models.DateTimeField(auto_now_add=True)
     rejection_reason=models.CharField(max_length=500,blank=True,null=True)

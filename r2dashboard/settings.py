@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-lqg7_r40j*t9(dggh8b-&$l__5prl03dl3xdchfsex!6h-5a#e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'account',
     'user_request_form',
     'common',
+    'django_filters'
 ]
 
 MIDDLEWARE = [
@@ -146,13 +147,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 REST_FRAMEWORK = {
-    
+    # 'DEFAULT_RENDERER_CLASSES': (
+    #     'rest_framework.renderers.JSONRenderer',
+    #     'rest_framework.renderers.BrowsableAPIRenderer',
+    # ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.IsAuthenticated',
-    # ]
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    
+    # 'DEFAULT_FILTER_BACKENDS':('rest_framework.filters.SearchFilter',),
+    # 'SEARCH_PARAM':'tsp_search'
 }
 
 # Django project settings.py
@@ -205,3 +214,13 @@ AUTHENTICATION_BACKENDS =[
 'r2dashboard.authentications.PhoneAuthenticationBackend',
 'django.contrib.auth.backends.ModelBackend',
 ]
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    }
+}

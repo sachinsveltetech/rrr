@@ -1,30 +1,32 @@
-# from functools import partial
-# from urllib.request import Request
-# from functools import partial
-# from logging import raiseExceptions
-# from sre_constants import SUCCESS
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
-# from yaml import serialize
-# from yaml import serialize
-# from yaml import serialize
-# from yaml import serialize
-from .serializers import RejectionTableSerializer, TspResponseSerializer, UserRequestFormSerializer,TspSerializer,IPPortSerializer,UserRequestReplieSerializer,CyberdromeSerializer
+from account.utils import ADMIN, TSP
+from account import permissions
+from user_request_form.utils import APPROVE, IPDR, REJECT, TDR, PENDING
+from .serializers import RejectionTableSerializer,  UserRequestFormSerializer,TspSerializer,IPPortSerializer
 from .models import RejectionTable, UserRequestForm,Tsp,IPPort
 from django.http import Http404
 from .permissions import UserPermissions
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 from account.permissions import AdminCrudTspPermission
 from account.renderers import UserRenderer
 from django.db.models import Q
-
+from django_filters import rest_framework as filters
+from rest_framework.filters import SearchFilter 
+        
         
 class UserRequestFormView(GenericAPIView):
     renderer_classes=[UserRenderer]
     permission_classes=[UserPermissions,]
     queryset = UserRequestForm.objects.all()
     serializer_class = UserRequestFormSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ['request_to_provide']
+    # ordering_fields = ['id']
+    # filter_backends=[filters.DjangoFilterBackend]
+    # filterset_fields=('district__name','request_to_provide',)
     
     def get_object(self,id, queryset=None):
         if queryset is None:
@@ -37,11 +39,39 @@ class UserRequestFormView(GenericAPIView):
         
     def get_queryset(self):
         if self.request.user.is_authenticated:
+            query = {}
+            
+            queryset = self.queryset
             if self.request.user.type == 'USER':
-                return self.queryset.filter(user=self.request.user)
-            return self.queryset.all()
+                queryset= self.queryset.filter(user=self.request.user)
+            if self.request.user.type == 'TSP':
+                queryset= self.queryset.filter(select_tsp__name=self.request.user.tsp_company.name).exclude(request_to_provide__in=[IPDR, TDR], admin_status__in=[REJECT, PENDING])
+            if self.request.user.type == 'ADMIN':
+                if user := self.request.query_params.get('user', None):
+                    query['user__id'] = user
+                if decision_taken_by := self.request.query_params.get('decision_taken_by', None):
+                    query['decision_taken_by__id'] = decision_taken_by
+                if decision_taken_by_type := self.request.query_params.get('decision_taken_by_type', None):
+                    query['decision_taken_by__type'] = decision_taken_by_type
+                if select_tsp := self.request.query_params.get('select_tsp', None):
+                    query['select_tsp__name'] = select_tsp
+                
+            if request_to_provide := self.request.query_params.get('request_to_provide', None):
+                query['request_to_provide'] = request_to_provide
+            if district := self.request.query_params.get('district', None):
+                query['district__name'] = district
+                
+            sys_date_from = self.request.query_params.get('sys_date_from', None)
+            sys_date_to = self.request.query_params.get('sys_date_to', None)
+            if sys_date_from and sys_date_to:
+                query['sys_date__range'] = [sys_date_from, sys_date_to]
+            return queryset.filter(**query)
+
     
-         
+    def get(self,request,*args, **kwargs):
+        serializer=UserRequestFormSerializer(self.queryset ,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
     def get(self,request,pk=None,format=None):
         queryset = self.get_queryset()
         # print('First:',self.request.user.district)
@@ -59,11 +89,10 @@ class UserRequestFormView(GenericAPIView):
         serializer=UserRequestFormSerializer(user,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
     
-        
     def post(self,request,format=None):
         data=request.data   
         serializer=UserRequestFormSerializer(data=data)
-        # breakpoint()
+        
         if serializer.is_valid(raise_exception=True):
             # breakpoint()
             serializer.save(user=self.request.user)
@@ -73,15 +102,14 @@ class UserRequestFormView(GenericAPIView):
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
     def put(self,request,pk=None,format=None):
-        data=request.data
         id=pk        
         if id is not None:
             user=self.get_object(id=id)
             if user is not None:                
                 user=UserRequestForm.objects.get(id=id)           
-                serializer=UserRequestFormSerializer(user,data=data,context={'request':request})
+                serializer=UserRequestFormSerializer(user,data=request.data,context={'request':request})
                 if serializer.is_valid(raise_exception=True):
-                    serializer.save(user=self.request.user)
+                    serializer.save()
                     sdata=serializer.data
                     return Response({'detail':'User Request Form updated successfully','updated_data':sdata},status=status.HTTP_201_CREATED)
                 return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
@@ -89,15 +117,15 @@ class UserRequestFormView(GenericAPIView):
         return Response({"detail":"id is required for update operation please provide id"},status=status.HTTP_400_BAD_REQUEST)
     
     def patch(self,request,pk=None,format=None):
-        data=request.data
         id=pk        
+        
         if id is not None:
             user=self.get_object(id=id)
             if user is not None:                
                 user=UserRequestForm.objects.get(id=id)           
-                serializer=UserRequestFormSerializer(user,data=data,partial=True,context={'request':request})
+                serializer=UserRequestFormSerializer(user,data=request.data,partial=True,context={'request':request})
                 if serializer.is_valid(raise_exception=False):
-                    serializer.save(user=self.request.user)
+                    serializer.save()
                     sdata=serializer.data
                     return Response({'detail':'User Request Form updated successfully','updated_data':sdata},status=status.HTTP_201_CREATED)
                 return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
@@ -117,8 +145,13 @@ class UserRequestFormView(GenericAPIView):
         return Response({'detail':'id is required for delete operation please provide id'},status=status.HTTP_400_BAD_REQUEST)
     
 class TspCreateView(GenericAPIView):
+    
     renderer_classes=[UserRenderer]
     permission_classes=[AdminCrudTspPermission,]
+    queryset=Tsp.objects.all()
+    serializer_class=TspSerializer
+    
+    
     def get(self,request,pk=None,form=None):
         data=request.data
         id=pk
@@ -137,114 +170,7 @@ class TspCreateView(GenericAPIView):
             serializer.save()
             return Response({'detail':'TSP created successfully'},status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-        
-class TspRequestReplieView(GenericAPIView):
-    renderer_classes=[UserRenderer]
-    def get(self,request,format=None):
-        user=UserRequestForm.objects.exclude(form_status="PENDING")
-        serializer=UserRequestReplieSerializer(user,many=True)
-        return Response(serializer.data)
-            
-            
-class CyberdromeView(GenericAPIView):
-    renderer_classes=[UserRenderer]
-    def get_user_object(self,id):
-        try:
-            user=UserRequestForm.objects.get(id=id)
-        except UserRequestForm.DoesNotExist:
-            user=None
-        return user
-    def get(self,request,pk=None,format=None):
-        # print(request.data)
-        id=pk
-        if id is not None:
-            user=self.get_user_object(id=id)
-            if user is not None:
-                # user=UserRequestForm.objects.get(id=id)
-                serializer=CyberdromeSerializer(user)            
-                return Response(serializer.data,status=status.HTTP_200_OK)
-            return Response({'detail':'user does not exist please enter a valid user id'})
-        user=UserRequestForm.objects.all()
-        serializer=CyberdromeSerializer(user,many=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)
-    
-    def post(self,request,format=None):
-        data=request.data
-        serializer=UserRequestForm(data=data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            cdata=serializer.data
-            return Response({'detail':'data saved successfully','created_data':cdata},status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-    
-    def patch(self,request,pk=None,format=None):
-        data=request.data        
-        id=pk
-        if id:
-            user=self.get_user_object(id=id)
-            if user:                
-                # user=UserRequestForm.objects.get(id=id)
-                if user.request_to_provide == 'IPDR' or user.request_to_provide == 'TDR':
-                    serializer=UserRequestFormSerializer(user,partial=True,data=data)
-                    if serializer.is_valid(raise_exception=True):
-                        serializer.save()
-                        data=serializer.data
-                        return Response({'detail':'Action taken by the cyberdrome','data':data},status=status.HTTP_201_CREATED)
-                    return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-                return Response({'detail':'Approval is not required'})
-            return Response({'detail':'user does not exist please enter a valid user'})
-        return Response({'detail':'Please provide id...for the operation'})
-        
-        
-class TspResponseListView(GenericAPIView):
-    def get(self,request,format=None):            
-        form_data=UserRequestForm.objects.exclude((Q(request_to_provide = "IPDR") | Q(request_to_provide = "TDR")) & Q(form_status ='REJECT'))        
-        serializer=TspResponseSerializer(form_data,many=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)       
-            
-class TspResponseDetailView(GenericAPIView):
-    def get_user_object(self,id):
-        try:
-            user=UserRequestForm.objects.get(id=id)
-        except UserRequestForm.DoesNotExist:
-            user=None
-        return user
-    
-    def get(self,request,pk=None,format=None):
-        id=pk
-        if id:        
-            user_request_form=self.get_user_object(id=id)
-            if user_request_form:
-                if user_request_form.request_to_provide in ['IPDR','TDR']:
-                    if user_request_form.form_status == 'SUCCESS':                                     
-                        # user=UserRequestForm.objects.get(id=id)
-                        serializer=TspResponseSerializer(user_request_form)
-                        return Response(serializer.data,status=status.HTTP_200_OK)
-                    return Response({'detail':'Cyberdome uproval is required'})
-                serializer=TspResponseSerializer(user_request_form)
-                return Response(serializer.data,status=status.HTTP_200_OK)
-            return Response({'detail':'user does not exist please provide valid user'})
-        # user_request_form=UserRequestForm.objects.all()
-        
-    
-    def patch(self,request,pk=None,format=None):
-        data=request.data        
-        id=pk
-        if id is not None:
-            user=self.get_user_object(id=id)
-            if user is not None:                 
-                # user=UserRequestForm.objects.get(id=id)
-                serializer=TspResponseSerializer(user,partial=True,data=data)
-                if serializer.is_valid(raise_exception=True):
-                    serializer.save()
-                    data=serializer.data
-                    return Response({'detail':'Action taken by TSP','data':data},status=status.HTTP_200_OK)
-                return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-            return Response({'detail':'user does not exist please provide valid user'})
-        return Response({'detail':'Please provide id...for the operation'},status=status.HTTP_400_BAD_REQUEST)
-        
-        
-            
+
 class RejectionTableView(GenericAPIView):
     serializer_class = RejectionTableSerializer
     queryset = RejectionTable.objects.all()
@@ -301,7 +227,4 @@ class RejectionTableView(GenericAPIView):
             rt.delete()
             return Response({'detail':'Rejection table has been deleted successfully'},status=status.HTTP_200_OK)
         return Response({'detail':'id is required for deletion operation'})
-        
-        
-        
-        
+

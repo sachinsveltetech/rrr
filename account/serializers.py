@@ -11,7 +11,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password2=serializers.CharField(style={'input_type':'password'},write_only=True)
     class Meta:
         model=User
-        fields=['username','phone','district','type','password','password2','tsp_company']
+        fields=['username','phone','district','type','password','password2','tsp_company', 'state']
         extra_kwargs={
             'password':{'write_only':True}
         }
@@ -54,5 +54,8 @@ class UserChangePasswordSerializer(serializers.Serializer):
         return User.objects.create(**validated_data)
     
     
-
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields='__all__'
         

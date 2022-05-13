@@ -4,3 +4,8 @@ ACCOUNT_TYPE = [
         ('TSP', 'TSP'),
         ('USER', 'USER'),
     ]
+
+ADMIN = 'ADMIN'
+TSP = 'TSP'
+USER = 'USER'
+SUPER_USER = 'SUPER_USER'

@@ -10,7 +10,9 @@ class AdminRegistrationPermission(BasePermission):
                 return False
         return False
         # return super().has_permission(request, view)
-        
+      
+    def has_object_permission(self, request, view, obj):
+        return super().has_object_permission(request, view, obj)    
 class AdminCrudTspPermission(BasePermission):
     def has_permission(self, request, view):
         if request.user.is_authenticated:

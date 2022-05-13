@@ -1,8 +1,8 @@
 # from django.shortcuts import render
-# import stat
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
+# from yaml import serialize
 # from yaml import serialize
 # from yaml import serialize
 from .models import State,District
@@ -10,7 +10,8 @@ from .serializers import StateSerializer,DistrictSerializer
 # Create your views here.
 
 class StateView(APIView):   
-    
+    queryset=State.objects.all()
+    serializer=StateSerializer
     def get(self,request,pk=None,format=None):
         id=pk
         if id is not None:
@@ -66,6 +67,8 @@ class StateView(APIView):
     
     
 class DistrictView(APIView):
+    queryset=District.objects.all()
+    serializer=DistrictSerializer
     def get(self,request,pk=None,format=None):
         id=pk
         if id is not None:

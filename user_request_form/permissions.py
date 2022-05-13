@@ -1,18 +1,29 @@
 from rest_framework.permissions import BasePermission,SAFE_METHODS
+from account.utils import USER, ADMIN, TSP
+
+
+OBJECT_METHODS = ['PUT', 'PATCH', 'DELETE']
+
 
 class UserPermissions(BasePermission):
+    
     def has_permission(self, request, view):
-        if request.user.is_authenticated:
-            user_type=request.user.type
-            # print(user_type)
-            if user_type == 'ADMIN' or user_type == 'TSP':
-                allowed_method=['GET','PATCH',]
-                if request.method in allowed_method:
-                    return True
-                else:
-                    return False
+        if not request.user.is_authenticated:            
+                return False
+        if request.user.type == USER:
+            return True
+        if request.user.type in [ADMIN, TSP]: 
+            if request.method in ['POST', 'DELETE']:
+                return False
             else:
                 return True
+        
         return False
-            
-        # return super().has_permission(request, view)
+    
+    def has_object_permission(self, request, view, obj):
+        # print('putututu')
+        if request.user.type == USER:
+            return obj.user == request.user
+        if request.user.type in [ADMIN, TSP] and request.method != 'DELETE':
+            return True
+        return False
