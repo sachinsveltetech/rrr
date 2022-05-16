@@ -59,7 +59,7 @@ class UserRequestFormView(GenericAPIView):
             if request_to_provide := self.request.query_params.get('request_to_provide', None):
                 query['request_to_provide'] = request_to_provide
             if district := self.request.query_params.get('district', None):
-                query['district__name'] = district
+                query['user__district__name'] = district
                 
             sys_date_from = self.request.query_params.get('sys_date_from', None)
             sys_date_to = self.request.query_params.get('sys_date_to', None)
