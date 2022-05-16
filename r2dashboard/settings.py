@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'account',
     'user_request_form',
     'common',
-    'django_filters'
+    'django_filters',
 ]
 
 MIDDLEWARE = [

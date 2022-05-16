@@ -1,11 +1,13 @@
 # from xml.etree.ElementInclude import include
 # from attr import validate
 from rest_framework import serializers
+from zmq import NULL
 from.models import RejectionTable, UserRequestForm,IPPort
 from common.models import Tsp
 from account.utils import ADMIN, TSP,USER
 from account.models import User
 import json
+# from zmq import NULL
 # from account.models import User
 
 
@@ -35,6 +37,7 @@ class UserRequestFormSerializer(serializers.ModelSerializer):
     class Meta:
         model=UserRequestForm
         fields='__all__'
+        # fields=['admin_status', 'approval_or_reject_date', 'approval_or_reject_time', 'case_ref', 'case_type', 'cell_id', 'decision_taken_by','duration_date_from', 'duration_date_to', 'duration_time_from', 'duration_time_to', 'form_status', 'id', 'imei', 'ip_port','mobile_number', 'observer_account_type', 'reject_msg_admin', 'reject_msg_tsp', 'replied_date', 'request_to_provide', 'requested_date','select_tsp', 'sys_date', 'sys_time', 'target_type', 'tsp_file', 'user', 'user_file','district']
         read_only_fields=['user','district']
     #AAA
     
@@ -66,6 +69,8 @@ class UserRequestFormSerializer(serializers.ModelSerializer):
             if instance.form_status == 'REJECT':
                 validate_data['form_status']= 'PENDING'
                 validate_data['admin_status']='PENDING'
+                validate_data['reject_msg_admin']='null'
+                validate_data['reject_msg_tsp']='null'
         
         if validate_data.get('admin_status', None) and validate_data['admin_status'] == 'REJECT':
             validate_data['form_status'] = 'REJECT'        
