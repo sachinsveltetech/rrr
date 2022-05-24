@@ -9,13 +9,13 @@ from .utils import ACCOUNT_TYPE
 
 #custom usermanager
 class UserManager(BaseUserManager):
-    def create_user(self, username, phone ,email,password=None, password2=None,**extra_fields):
+    def create_user(self, phone ,email,password=None, password2=None,**extra_fields):
         """
         Creates and saves a User with the given email, date of
         birth and password.
         """
-        if not username:
-            raise ValueError('Users must have an user name')
+        # if not username:
+        #     raise ValueError('Users must have an user name')
 
         if not phone:
             raise ValueError('Users must have an phone number')
@@ -23,11 +23,9 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('Users must have an email address')
 
-        user = self.model(
-            username=username,
+        user = self.model(            
+            email=self.normalize_email(email),
             phone=phone,
-            email=email,
-            
            
             **extra_fields,
         )
@@ -35,7 +33,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, phone,type, password=None,**extra_fields):
+    def create_superuser(self,phone,type,email, password=None,**extra_fields):
         """
         Creates and saves a superuser with the given email, date of
         birth and password.
@@ -43,8 +41,9 @@ class UserManager(BaseUserManager):
         if password is None:
             raise ValueError('Password should not be none')
         user = self.create_user(
-            username=username,
-            phone=phone,
+            # username=username,
+            phone,
+            email,
             password=password,            
             type=type,
             **extra_fields,
@@ -61,8 +60,9 @@ class User(AbstractBaseUser):
                             'without spaces, + or isd code.'}
     mobile_regex_validator = RegexValidator(regex=r"^[6-9]\d{9}$",
                                              message="Invalid phone number")
-    username=models.CharField(max_length=255,unique=True)
-    email=models.EmailField(max_length=250,unique=True,blank=True,null=True)    
+    username=models.CharField(verbose_name='Full Name',max_length=255)
+    dist=models.CharField(max_length=200,blank=True,null=True)
+    email=models.EmailField(verbose_name='email address',max_length=250,unique=True,blank=True,null=True)    
     phone = models.CharField(
         verbose_name='Mobile Number',
         max_length=12,
@@ -70,6 +70,7 @@ class User(AbstractBaseUser):
         validators=[mobile_regex_validator],blank=False, null=False,error_messages=mobile_number_errors)
     district = models.ForeignKey(District,on_delete=models.CASCADE,blank=True,null=True)
     state=models.ForeignKey(State,on_delete=models.CASCADE, null=True, blank=True)
+    st=models.CharField(max_length=200,default="ASSAM")
     type = models.CharField(choices=ACCOUNT_TYPE, max_length=255, default='USER')
     tsp_company=models.ForeignKey(Tsp,on_delete=models.CASCADE,blank=True,null=True, related_name="user_tsp_companies")
     is_active = models.BooleanField(default=True)
@@ -80,6 +81,7 @@ class User(AbstractBaseUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['phone','type',]
+    # REQUIRED_FIELDS = []
 
     def __str__(self):
         return self.username

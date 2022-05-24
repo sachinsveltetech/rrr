@@ -1,6 +1,6 @@
 # from tkinter import CASCADE
 # from typing import Dict
-from distutils.command.upload import upload
+# from distutils.command.upload import upload
 from django.db import models
 from django.contrib.auth import get_user_model
 from common.models import Tsp
@@ -12,8 +12,8 @@ User = get_user_model()
 
 
 class IPPort(models.Model):    
-    ip=models.CharField(max_length=200,validators=[ip_regex_validator])
-    port=models.IntegerField()
+    ip=models.CharField(max_length=200,validators=[ip_regex_validator],blank=True,null=True)
+    port=models.IntegerField(blank=True,null=True)
     date_from=models.DateField(blank=True,null=True)
     date_to=models.DateField(blank=True,null=True)
     time_from=models.TimeField(blank=True,null=True)
@@ -28,11 +28,15 @@ class UserRequestForm(models.Model):
     observer_account_type = models.CharField(max_length=200, choices=ACCOUNT_TYPE, blank=True,default='USER')
     decision_taken_by=models.ForeignKey(User,on_delete=models.CASCADE,related_name='userrequestform_decision_taken_by',blank=True,null=True)
     user=models.ForeignKey(User,on_delete=models.CASCADE)
-    ip_port=models.ManyToManyField(IPPort)
+    ip_port=models.ManyToManyField(IPPort,blank=True)
     
+    #To be filled by system:
+    
+    updated_at=models.DateTimeField(auto_now=True)
+    updated_by_tsp=models.CharField(max_length=200,blank=True,null=True)
     #to be filled by the user:
-    sys_date=models.DateField()
-    sys_time=models.TimeField()
+    sys_date=models.DateField(blank=True,null=True)
+    sys_time=models.TimeField(blank=True,null=True)    
     target_type=models.CharField(max_length=200,choices=TARGET_TYPE)
     case_ref=models.CharField(max_length=200)
     case_type=models.CharField(max_length=200)

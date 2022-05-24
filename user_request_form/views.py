@@ -7,10 +7,10 @@ from account import permissions
 from user_request_form.utils import APPROVE, IPDR, REJECT, TDR, PENDING
 from .serializers import RejectionTableSerializer,  UserRequestFormSerializer,TspSerializer,IPPortSerializer
 from .models import RejectionTable, UserRequestForm,Tsp,IPPort
-from django.http import Http404
+# from django.http import Http404
 from .permissions import UserPermissions
 from rest_framework.permissions import IsAdminUser, AllowAny
-from account.permissions import AdminCrudTspPermission
+# from account.permissions import AdminCrudTspPermission
 from account.renderers import UserRenderer
 from django.db.models import Q
 from django_filters import rest_framework as filters
@@ -22,8 +22,8 @@ class UserRequestFormView(GenericAPIView):
     permission_classes=[UserPermissions,]
     queryset = UserRequestForm.objects.all()
     serializer_class = UserRequestFormSerializer
-    filter_backends = [SearchFilter]
-    search_fields = ['request_to_provide']
+    # filter_backends = [SearchFilter]
+    # search_fields = ['request_to_provide']
     # ordering_fields = ['id']
     # filter_backends=[filters.DjangoFilterBackend]
     # filterset_fields=('district__name','request_to_provide',)
@@ -60,6 +60,8 @@ class UserRequestFormView(GenericAPIView):
                 query['request_to_provide'] = request_to_provide
             if district := self.request.query_params.get('district', None):
                 query['user__district__name'] = district
+            if dist := self.request.query_params.get('dist',None):
+                query['user__dist'] = dist
                 
             sys_date_from = self.request.query_params.get('sys_date_from', None)
             sys_date_to = self.request.query_params.get('sys_date_to', None)
@@ -90,15 +92,12 @@ class UserRequestFormView(GenericAPIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
     
     def post(self,request,format=None):
-        data=request.data   
+        data=request.data
+           
         serializer=UserRequestFormSerializer(data=data)
-        
         if serializer.is_valid(raise_exception=True):
-            # breakpoint()
             serializer.save(user=self.request.user)
-            # print(serializer.data)
-            sdata=serializer.data
-            return Response({'detail':'User Request Form created successfully','created_data':sdata},status=status.HTTP_201_CREATED)
+            return Response({'detail':'User Request Form created successfully','created_data':serializer.data},status=status.HTTP_201_CREATED)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
     def put(self,request,pk=None,format=None):
@@ -147,7 +146,7 @@ class UserRequestFormView(GenericAPIView):
 class TspCreateView(GenericAPIView):
     
     renderer_classes=[UserRenderer]
-    permission_classes=[AdminCrudTspPermission,]
+    permission_classes=[AllowAny,]
     queryset=Tsp.objects.all()
     serializer_class=TspSerializer
     

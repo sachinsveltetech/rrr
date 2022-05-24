@@ -13,7 +13,7 @@ class UserPermissions(BasePermission):
         if request.user.type == USER:
             return True
         if request.user.type in [ADMIN, TSP]: 
-            if request.method in ['POST', 'DELETE']:
+            if request.method in ['POST', 'DELETE','PUT']:
                 return False
             else:
                 return True

@@ -1,0 +1,14 @@
+Hoisting
+Event Loop
+Call back function
+Call, Bind, Apply
+SetTimeout, setTimeinterval
+for each loop vs map
+Event
+var vs const vs let
+microtask queue
+clousre functionality
+lexical scoop
+curring
+pure function
+promisess

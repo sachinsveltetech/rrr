@@ -24,7 +24,7 @@ class State(models.Model):
 
 class District(models.Model):
     name=models.CharField(max_length=200)
-    state=models.ForeignKey(State, on_delete=models.CASCADE)
+    # state=models.CharField(max_length=200,default='ASSAM')
     
     class Meta:
         ordering=['id']

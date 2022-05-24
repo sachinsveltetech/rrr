@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+# from django.conf import PASSWORD_RESET_TIMEOUT_DAYS_DEPRECATED_MSG
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -154,13 +156,17 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
+    # 'DEFAULT_PERMISSION_CLASSES': [
+        # 'rest_framework.permissions.IsAuthenticated',
+    # ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
     
-    # 'DEFAULT_FILTER_BACKENDS':('rest_framework.filters.SearchFilter',),
+    
+    # 'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+
+    
+    'DEFAULT_FILTER_BACKENDS':('rest_framework.filters.SearchFilter',),
     # 'SEARCH_PARAM':'tsp_search'
 }
 
@@ -209,7 +215,19 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 AUTH_USER_MODEL='account.User'
+ 
+# Email configuration for reset password
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST='smtp.gmail.com'
+EMAIL_PORT='587'
+EMAIL_HOST_USER=os.environ.get('EMAIL_USER')
+# EMAIL_HOST_USER='sachinwb1991@gmail.com'
+EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_PASS')
+# EMAIL_HOST_PASSWORD='9832879556'
+EMAIL_USE_TLS=True
 
+
+# authentication with phone(login with phone)
 AUTHENTICATION_BACKENDS =[
 'r2dashboard.authentications.PhoneAuthenticationBackend',
 'django.contrib.auth.backends.ModelBackend',
@@ -224,3 +242,9 @@ SWAGGER_SETTINGS = {
         }
     }
 }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT= BASE_DIR / "media"
+
+# for password_reset_token_generator time out in email
+PASSWORD_RESET_TIMEOUT = 900      #900 sec = 15 minute
