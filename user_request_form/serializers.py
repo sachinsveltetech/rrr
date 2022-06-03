@@ -51,9 +51,12 @@ class UserRequestFormSerializer(serializers.ModelSerializer):
     
     def validate_ip_port(self, data):
         detail = json.loads(data)
+        # print(detail)
   
         for d in detail:
+            # print(d)
             test = IPPortSerializer(data=d)
+            print(test)
             if test.is_valid(raise_exception=True):
                 continue
         return data

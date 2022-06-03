@@ -1,5 +1,5 @@
 # from django.http import QueryDict
-from functools import partial
+# from functools import partial
 from django.shortcuts import render
 from django.contrib.auth import authenticate
 # from html5lib import serialize
@@ -25,7 +25,9 @@ GenericAPIView
 from user_request_form.serializers import UserRequestFormSerializer
 from rest_framework.filters import SearchFilter 
 
-
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 
 def get_tokens_for_user(user):
@@ -67,6 +69,7 @@ class UserLoginView(GenericAPIView):
             user=authenticate(username=username,password=password)
             if user is not None:
                 user_data = UserSerializer(user).data
+                # print(user_data)
                 user_data['token'] =token=get_tokens_for_user(user) 
                 return Response({'data':user_data,'msg':'Login Successfully'},status=status.HTTP_200_OK)
             else:
@@ -95,15 +98,7 @@ class UserList(GenericAPIView):
     def get_queryset(self):
         query = {}
         if user_type:= self.request.query_params.get('user_type',None):
-            query['type'] = user_type
-        # if username := self.request.query_params.get('username',None):
-        #     query['username']=username
-        # if email := self.request.query_params.get('email',None):
-        #     query['email']=email
-        # if phone := self.request.query_params.get('phone',None):
-        #     query['phone']=phone
-        # if district := self.request.query_params.get('district',None):
-        #     query['district__name']=district
+            query['type'] = user_type        
         return self.queryset.filter(**query)
     
     def get(self,request,format=None):  
@@ -123,8 +118,13 @@ class SendResetPasswordEmailView(APIView):
     
     def post(self,request,format=None):
         serializer=ResetPasswordEmailSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            return Response({'detail':'Password reset link send.Please check Email'},status=status.HTTP_200_OK)
+        email=request.data['email']
+        if User.objects.filter(email=email).exists():            
+            user=User.objects.get(email = email)
+            uid=urlsafe_base64_encode(force_bytes(user.id))
+            token=PasswordResetTokenGenerator().make_token(user)
+        if serializer.is_valid(raise_exception=True):            
+            return Response({'detail':'Password reset link send.Please check Email','uid':uid,'token':token},status=status.HTTP_200_OK)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
 class UserpasswordResetView(APIView):
